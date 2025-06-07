@@ -1,6 +1,7 @@
 import asyncio
 from pymirokai.robot import connect
 from pymirokai.models.data_models import Coordinates
+from pymirokai.robot.video import VideoStreamManager
 import time
 import cv2
 
@@ -23,23 +24,46 @@ async def main():
         # # visualize the frame
         
         ### start
-        vsm = robot.video_stream_manager
-        # 1) MUST set the base URL so VideoStreamManager.add_stream works
-        vsm.stream_base_url = f"rtsp://{robot_ip}:8554"
+        
+        # Display frames
+         # 1) Point it at your robot’s RTSP endpoint
+    vsm = VideoStreamManager(stream_base_url="rtsp://10.6.32.15:8554")
 
-        # 2) actually add the stream
-        vsm.add_stream("head_color", "head_color")
+    # 2) Add your camera feed by name
+    vsm.add_stream(stream_name="head_color", stream_url="head_color")
 
-        # 3) let it start grabbing
-        await asyncio.sleep(2)
+    # 3) Turn display ON for that feed
+    vsm.set_display("head_color", True)
 
-        # 4) now get and save
-        frame = vsm.get_frame("head_color")
-        if frame is None:
-            print("No frame available yet!")
-        else:
-            cv2.imwrite("head_color_snapshot.png", frame)
-            print("Saved head_color_snapshot.png")
+    # 4) Let it run until you hit Ctrl+C (or window “q”)
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        # 5) Clean up all windows and threads
+        vsm.close_all_streams()
+        
+        
+        # Save a frame
+        # vsm = robot.video_stream_manager
+        # # 1) MUST set the base URL so VideoStreamManager.add_stream works
+        # vsm.stream_base_url = f"rtsp://{robot_ip}:8554"
+
+        # # 2) actually add the stream
+        # vsm.add_stream("head_color", "head_color")
+
+        # # 3) let it start grabbing
+        # await asyncio.sleep(2)
+
+        # # 4) now get and save
+        # frame = vsm.get_frame("head_color")
+        # if frame is None:
+        #     print("No frame available yet!")
+        # else:
+        #     cv2.imwrite("head_color_snapshot.png", frame)
+        #     print("Saved head_color_snapshot.png")
         
         
         
