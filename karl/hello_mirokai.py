@@ -4,6 +4,7 @@ from pymirokai.models.data_models import Coordinates
 # from pymirokai.robot.video import VideoStreamManager
 import time
 import cv2
+import numpy as np
 
 robot_ip = "10.6.32.15"
 api_key  = "admin"
@@ -11,12 +12,13 @@ api_key  = "admin"
 async def main():  
     async with connect(api_key, robot_ip) as robot:
         
-        vsm = robot.video_stream_manager
-        vsm.stream_base_url = "rtsp://10.6.32.15:8554"
-        vsm.add_stream("head_color", "head_color")
-        vsm.set_display("head_color", True)
-        # hang indefinitely (or until the user presses “q” in the window)
-        await asyncio.Future()
+        # WORKING STREAMER
+        # vsm = robot.video_stream_manager
+        # vsm.stream_base_url = "rtsp://10.6.32.15:8554"
+        # vsm.add_stream("head_color", "head_color")
+        # vsm.set_display("head_color", True)
+        # # hang indefinitely (or until the user presses “q” in the window)
+        # await asyncio.Future()
         
         # greet_guests = robot.say("Hello, museum enthusiasts!")
         # walk = robot.go_to_relative(Coordinates(x=2.0, y=2.0, theta=0.0))
@@ -32,8 +34,8 @@ async def main():
         
         ### start
         
-        # Display frames
-         # 1) Point it at your robot’s RTSP endpoint
+    # Display frames
+    # 1) Point it at your robot’s RTSP endpoint
     # vsm = VideoStreamManager(stream_base_url="rtsp://10.6.32.15:8554")
 
     # # 2) Add your camera feed by name
@@ -64,13 +66,14 @@ async def main():
         # 3) let it start grabbing
         await asyncio.sleep(2)
 
+        num = np.random.randint(1000, 9999)
         # 4) now get and save
         frame = vsm.get_frame("head_color")
         if frame is None:
             print("No frame available yet!")
         else:
-            cv2.imwrite("head_color_snapshot.png", frame)
-            print("Saved head_color_snapshot.png")
+            cv2.imwrite(f"head_color_snapshot_{num}.png", frame)
+            print("Saved head_color_snapshot_{num}.png")
         
         
         
