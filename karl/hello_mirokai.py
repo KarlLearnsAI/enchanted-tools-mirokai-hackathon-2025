@@ -65,23 +65,26 @@ async def main():
         
 
         # 1) make VideoAPI, start capture thread
-        # video_api = VideoAPI(display=False, timeout=5000)
-        # full_url = f"rtsp://{robot_ip}:8554/head_color"
-        # video_api.start(full_url)
+        video_api = VideoAPI(display=False, timeout=5000)
+        full_url = f"rtsp://{robot_ip}:8554/head_color"
+        video_api.start(full_url)
 
-        # # 2) give it a couple of seconds to fill the buffer
-        # time.sleep(2)
+        # 2) give it a couple of seconds to fill the buffer
+        time.sleep(2)
         
-        # num = np.random.randint(1000, 9999)
-        # # 3) display frames until you hit 'q'
-        # while True:
-        #     frame = video_api.get_current_frame()
-        #     if frame is not None:
-        #         cv2.imshow("head_color", frame)
-        #         cv2.imwrite(f"head_color_snapshot_{num}.png", frame)
-        #         print(f"save head_color_snapshot_{num}.png")
-        #     if cv2.waitKey(1) & 0xFF == ord("q"):
-        #         break
+        num = np.random.randint(1000, 9999)
+        # 3) display frames until you hit 'q'
+        try:
+            while True:
+                frame = video_api.get_current_frame()
+                if frame is not None:
+                    cv2.imshow("head_color", frame)
+                    cv2.imwrite(f"frames/head_color_snapshot_{num}.png", frame)
+                    print(f"save frames/head_color_snapshot_{num}.png")
+                if cv2.waitKey(1) & 0xFF == ord("q"):
+                    break
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
 
 
@@ -178,11 +181,33 @@ async def main():
         ### end
         
         
-        # cont2 = robot.say("Now, let's move to the next exhibit to see the Mona Lisa.")
-        # walk2 = robot.go_to_relative(Coordinates(x=0.0, y=2.0, theta=0.0))
-        # await walk2.completed()
-        # checkpoint2 = robot.say("The Mona Lisa, painted by Leonardo da Vinci, is one of the most famous works of art in the world, known for its enigmatic smile.")
-        # await asyncio.sleep(3)
+        cont2 = robot.say("Now, let's move to the next exhibit to see the Mona Lisa.")
+        walk2 = robot.go_to_relative(Coordinates(x=0.0, y=2.0, theta=0.0))
+        await walk2.completed()
+        checkpoint2 = robot.say("The Mona Lisa, painted by Leonardo da Vinci, is one of the most famous works of art in the world, known for its enigmatic smile.")
+        await asyncio.sleep(3)
+        
+        # 1) make VideoAPI, start capture thread
+        video_api = VideoAPI(display=False, timeout=5000)
+        full_url = f"rtsp://{robot_ip}:8554/head_color"
+        video_api.start(full_url)
+
+        # 2) give it a couple of seconds to fill the buffer
+        time.sleep(2)
+        
+        num = np.random.randint(1000, 9999)
+        # 3) display frames until you hit 'q'
+        try:
+            while True:
+                frame = video_api.get_current_frame()
+                if frame is not None:
+                    cv2.imshow("head_color", frame)
+                    cv2.imwrite(f"frames/head_color_snapshot_{num}.png", frame)
+                    print(f"save frames/head_color_snapshot_{num}.png")
+                if cv2.waitKey(1) & 0xFF == ord("q"):
+                    break
+        except Exception as e:
+            print(f"An error occurred: {e}")
         
         # frame = capture_snapshot(robot_ip="10.6.32.15", stream_name="head_color")
         
