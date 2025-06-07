@@ -24,26 +24,47 @@ async def main():
         
         ### start
         vsm = robot.video_stream_manager
-        
-        # Make sure your base URL is set before adding:
-        # robot.video_stream_manager.stream_base_url = "rtsp://10.6.32.15:8554"
-        
-        # vsm.add_stream(stream_name="head_color", stream_url="head_color")
-        
-        # Give the capture thread a little time to start pulling frames
+        # 1) MUST set the base URL so VideoStreamManager.add_stream works
+        vsm.stream_base_url = f"rtsp://{robot_ip}:8554"
+
+        # 2) actually add the stream
+        vsm.add_stream("head_color", "head_color")
+
+        # 3) let it start grabbing
         await asyncio.sleep(2)
-        
-        # Now ask for the latest frame by name
+
+        # 4) now get and save
         frame = vsm.get_frame("head_color")
         if frame is None:
             print("No frame available yet!")
         else:
-            # Save to disk (it's just a numpy array)
             cv2.imwrite("head_color_snapshot.png", frame)
             print("Saved head_color_snapshot.png")
         
-        # …rest of your tour logic…
-        await robot.say("Now, let's move to the next exhibit…").completed()
+        
+        
+        
+        # vsm = robot.video_stream_manager
+        
+        # # Make sure your base URL is set before adding:
+        # # robot.video_stream_manager.stream_base_url = "rtsp://10.6.32.15:8554"
+        
+        # # vsm.add_stream(stream_name="head_color", stream_url="head_color")
+        
+        # # Give the capture thread a little time to start pulling frames
+        # await asyncio.sleep(2)
+        
+        # # Now ask for the latest frame by name
+        # frame = vsm.get_frame("head_color")
+        # if frame is None:
+        #     print("No frame available yet!")
+        # else:
+        #     # Save to disk (it's just a numpy array)
+        #     cv2.imwrite("head_color_snapshot.png", frame)
+        #     print("Saved head_color_snapshot.png")
+        
+        # # …rest of your tour logic…
+        # await robot.say("Now, let's move to the next exhibit…").completed()
         
         
         ### end
