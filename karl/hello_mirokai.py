@@ -32,12 +32,14 @@ async def main():
 
         # 2) give it a couple of seconds to fill the buffer
         time.sleep(2)
-
+        
+        num = np.random.randint(1000, 9999)
         # 3) display frames until you hit 'q'
         while True:
             frame = video_api.get_current_frame()
             if frame is not None:
                 cv2.imshow("head_color", frame)
+                cv2.imwrite("head_color_snapshot_{num}.png", frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
 
