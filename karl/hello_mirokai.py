@@ -10,12 +10,19 @@ api_key  = "admin"
 
 async def main():  
     async with connect(api_key, robot_ip) as robot:
-        video_stream_manager = robot.video_stream_manager
-        greet_guests = robot.say("Hello, museum enthusiasts!")
-        walk = robot.go_to_relative(Coordinates(x=2.0, y=2.0, theta=0.0))
-        await walk.completed()
-        checkpoint1 = robot.say("Napoleon Bonaparte was a French military leader who rose to prominence during the French Revolution and crowned himself Emperor of the French in 1804.")
-        await asyncio.sleep(3)
+        
+        vsm = robot.video_stream_manager
+        vsm.stream_base_url = "rtsp://10.6.32.15:8554"
+        vsm.add_stream("head_color", "head_color")
+        vsm.set_display("head_color", True)
+        # hang indefinitely (or until the user presses “q” in the window)
+        await asyncio.Future()
+        
+        # greet_guests = robot.say("Hello, museum enthusiasts!")
+        # walk = robot.go_to_relative(Coordinates(x=2.0, y=2.0, theta=0.0))
+        # await walk.completed()
+        # checkpoint1 = robot.say("Napoleon Bonaparte was a French military leader who rose to prominence during the French Revolution and crowned himself Emperor of the French in 1804.")
+        # await asyncio.sleep(3)
         
         
         # robot.video_stream_manager.add_stream(stream_name="head_color", stream_url="head_color")
