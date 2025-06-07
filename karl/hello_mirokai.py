@@ -9,8 +9,9 @@ async def main():
     async with connect(api_key, robot_ip) as robot:
         walk = robot.go_to_relative(Coordinates(x=1.0, y=2.0, theta=0.0))
         await walk.completed()
-        saystatement = robot.say("Hello, museum enthusiasts!")
-        await saystatement.completed()
+        greet_guests = robot.say("Hello, museum enthusiasts!")
+        walk2 = robot.go_to_relative(Coordinates(x=3.0, y=3.0, theta=0.0))
+        await walk2.completed()
 
 if __name__ == "__main__":
     asyncio.run(main())
