@@ -2,6 +2,7 @@ import asyncio
 from pymirokai.robot import connect
 from pymirokai.models.data_models import Coordinates
 # from pymirokai.robot.video import VideoStreamManager
+from pymirokai.core.video_api import VideoAPI
 import time
 import cv2
 import numpy as np
@@ -9,7 +10,7 @@ import numpy as np
 robot_ip = "10.6.32.15"
 api_key  = "admin"
 
-async def main():  
+async def main():
     async with connect(api_key, robot_ip) as robot:
         
         # WORKING STREAMER
@@ -20,12 +21,39 @@ async def main():
         # # hang indefinitely (or until the user presses “q” in the window)
         # await asyncio.Future()
         
+        
+        # VideoAPI
+        
+
+        # 1) make VideoAPI, start capture thread
+        video_api = VideoAPI(display=False, timeout=5000)
+        full_url = f"rtsp://{robot_ip}:8554/head_color"
+        video_api.start(full_url)
+
+        # 2) give it a couple of seconds to fill the buffer
+        time.sleep(2)
+
+        # 3) display frames until you hit 'q'
+        while True:
+            frame = video_api.get_current_frame()
+            if frame is not None:
+                cv2.imshow("head_color", frame)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+
+        # 4) clean up
+        video_api.close()
+        cv2.destroyAllWindows()
+
+        # …then you can continue with your robot.say() calls if needed…
+        
+        
+        
         # greet_guests = robot.say("Hello, museum enthusiasts!")
         # walk = robot.go_to_relative(Coordinates(x=2.0, y=2.0, theta=0.0))
         # await walk.completed()
         # checkpoint1 = robot.say("Napoleon Bonaparte was a French military leader who rose to prominence during the French Revolution and crowned himself Emperor of the French in 1804.")
         # await asyncio.sleep(3)
-        
         
         # robot.video_stream_manager.add_stream(stream_name="head_color", stream_url="head_color")
         # # get the frame
@@ -56,24 +84,24 @@ async def main():
         
         
         # Save a frame
-        vsm = robot.video_stream_manager
-        # 1) MUST set the base URL so VideoStreamManager.add_stream works
-        vsm.stream_base_url = f"rtsp://{robot_ip}:8554"
+        # vsm = robot.video_stream_manager
+        # # 1) MUST set the base URL so VideoStreamManager.add_stream works
+        # vsm.stream_base_url = f"rtsp://{robot_ip}:8554"
 
-        # 2) actually add the stream
-        vsm.add_stream("head_color", "head_color")
+        # # 2) actually add the stream
+        # vsm.add_stream("head_color", "head_color")
 
-        # 3) let it start grabbing
-        await asyncio.sleep(2)
+        # # 3) let it start grabbing
+        # await asyncio.sleep(2)
 
-        num = np.random.randint(1000, 9999)
-        # 4) now get and save
-        frame = vsm.get_frame("head_color")
-        if frame is None:
-            print("No frame available yet!")
-        else:
-            cv2.imwrite(f"head_color_snapshot_{num}.png", frame)
-            print("Saved head_color_snapshot_{num}.png")
+        # num = np.random.randint(1000, 9999)
+        # # 4) now get and save
+        # frame = vsm.get_frame("head_color")
+        # if frame is None:
+        #     print("No frame available yet!")
+        # else:
+        #     cv2.imwrite(f"head_color_snapshot_{num}.png", frame)
+        #     print("Saved head_color_snapshot_{num}.png")
         
         
         
