@@ -44,45 +44,139 @@ async def stream_head_color(robot_ip: str):
     # 3) run the blocking OpenCV loop off the main event loop
     await asyncio.to_thread(_capture_loop)
 
-async def go_to_museum_checkpoint(robot, robot_ip: str, *, use_absolute_coords: bool = False, coords: Coordinates, speech_content: str, speech_timer: float, checkpoint_name: str):
-    # move to museum checkpoint
-    if use_absolute_coords:
-        print(f"going to absolute coords {coords} for {checkpoint_name} checkpoint")
-        walk = robot.go_to_absolute(coords)
+def take_snapshot(
+    video_api: VideoAPI,
+    full_url: str,
+    snapshot_dir: str = "frames",
+    max_attempts: int = 30,
+    retry_delay: float = 0.1,
+) -> str:
+    """
+    Try up to `max_attempts` to read one frame from `video_api`.
+    If no frame appears, restart the stream and try once more.
+    Returns the filepath of the saved snapshot.
+    """
+    # try to get one frame
+    for attempt in range(max_attempts):
+        frame = video_api.get_current_frame()
+        if frame is not None:
+            break
+        time.sleep(retry_delay)
     else:
-        print(f"going to relative coords {coords} for {checkpoint_name} checkpoint")
-        walk = robot.go_to_relative(coords)
-    await walk.completed()
-    print(f"finished {checkpoint_name} walk")
+        # no frame after max_attempts: restart the stream once
+        video_api.stop()
+        video_api.start(full_url)
+        time.sleep(2)  # let buffer refill
+        frame = video_api.get_current_frame()
+        if frame is None:
+            raise RuntimeError("Stream dead even after restart")
 
-    # start yapping about museum checkpoint
-    checkpoint1 = robot.say(speech_content)
-    # await robot.say(speech_content)
-    await asyncio.sleep(speech_timer) # wait for speech to finish
-    print(f"finished {checkpoint_name} talk")
+    # save & show
+    num = np.random.randint(1000, 9999)
+    fname = f"{snapshot_dir}/head_color_snapshot_{num}.png"
+    cv2.imwrite(fname, frame)
+    cv2.imshow("head_color", frame)
+    cv2.waitKey(1)
+    print(f"Saved {fname}")
+    return fname
 
-    # take frame of audience
-    try:
-        await stream_head_color(robot_ip)
-    except Exception as e:
-        print(f"[ERROR] Stream failed at {checkpoint_name}: {e}")
+# async def go_to_museum_checkpoint(robot, robot_ip: str, *, use_absolute_coords: bool = False, coords: Coordinates, speech_content: str, speech_timer: float, checkpoint_name: str):
+#     # move to museum checkpoint
+#     if use_absolute_coords:
+#         print(f"going to absolute coords {coords} for {checkpoint_name} checkpoint")
+#         walk = robot.go_to_absolute(coords)
+#     else:
+#         print(f"going to relative coords {coords} for {checkpoint_name} checkpoint")
+#         walk = robot.go_to_relative(coords)
+#     await walk.completed()
+#     print(f"finished {checkpoint_name} walk")
+
+#     # start yapping about museum checkpoint
+#     checkpoint1 = robot.say(speech_content)
+#     # await robot.say(speech_content)
+#     await asyncio.sleep(speech_timer) # wait for speech to finish
+#     print(f"finished {checkpoint_name} talk")
+
+#     # take frame of audience
+#     try:
+#         await stream_head_color(robot_ip)
+#     except Exception as e:
+#         print(f"[ERROR] Stream failed at {checkpoint_name}: {e}")
     
-    # analyze aduience and say something
-    # TODO
+    
+#     # analyze aduience and say something
+#     # TODO
+
+async def go_to_museum_checkpoint(
+    robot,
+    video_api: VideoAPI,
+    full_url: str,
+    *,
+    coords: Coordinates,
+    intro: str,
+    pause: float,
+    name: str
+):
+    # move
+    walk = robot.go_to_relative(coords)
+    await walk.completed()
+    print(f"[{name}] walk done")
+
+    # speak
+    await robot.say(intro)
+    await asyncio.sleep(pause)
+    print(f"[{name}] talk done")
+
+    # snapshot (offload blocking I/O)
+    try:
+        await asyncio.to_thread(take_snapshot, video_api, full_url)
+    except Exception as e:
+        print(f"[ERROR] snapshot at {name}: {e}")
 
 async def main():
+    full_url = f"rtsp://{robot_ip}:8554/head_color"
+    video_api = VideoAPI(display=False, timeout=5000)
+    video_api.start(full_url)
+    await asyncio.sleep(2)  # let buffer fill
+    
     async with connect(api_key, robot_ip) as robot:
         # greeting + first checkpoint
         # await robot.say("Hello, museum enthusiasts!")
         greet_guests = robot.say("Hello, museum enthusiasts!")
-        await go_to_museum_checkpoint(robot, robot_ip, use_absolute_coords=False, coords=Coordinates(x=2.0, y=0.0, theta=0.0),
-            speech_content=(
+        # await go_to_museum_checkpoint(robot, robot_ip, use_absolute_coords=False, coords=Coordinates(x=2.0, y=0.0, theta=0.0),
+        #     speech_content=(
+        #         "Napoleon Bonaparte was a French military leader who rose to prominence "
+        #         "during the French Revolution and crowned himself Emperor of the French in 1804."
+        #     ),
+        #     speech_timer=7,
+        #     checkpoint_name="first"
+        # )       
+        
+        
+        await go_to_museum_checkpoint(
+            robot, video_api, full_url,
+            coords=Coordinates(x=2.0, y=0.0, theta=0.0),
+            intro=(
                 "Napoleon Bonaparte was a French military leader who rose to prominence "
-                "during the French Revolution and crowned himself Emperor of the French in 1804."
+                "during the French Revolution and crowned himself Emperor in 1804."
             ),
-            speech_timer=7,
-            checkpoint_name="first"
-        )       
+            pause=7,
+            name="first"
+        )
+
+        # second stop
+        await robot.say("Now, let's move to the next exhibit to see the Mona Lisa.")
+        await go_to_museum_checkpoint(
+            robot, video_api, full_url,
+            coords=Coordinates(x=2.0, y=0.0, theta=0.0),
+            intro=(
+                "The Mona Lisa, painted by Leonardo da Vinci, is one of the most famous works "
+                "of art in the world, known for its enigmatic smile."
+            ),
+            pause=4,
+            name="second"
+        )
+        
         
         # walk = robot.go_to_relative(Coordinates(x=2.0, y=0.0, theta=0.0))
         # await walk.completed()
