@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 import random
 
-robot_ip = "10.6.32.15"
+robot_ip = "10.6.57.247" # "10.6.32.15"
 api_key  = "admin"
 
 # def capture_snapshot(robot_ip: str,
@@ -90,6 +90,12 @@ async def main():
         # # hang indefinitely (or until the user presses “q” in the window)
         # await asyncio.Future()
         
+        # vsm = robot.video_stream_manager
+        # vsm.stream_base_url = f"rtsp://{robot_ip}:8554"
+        # vsm.add_stream("head_color", "head_color")
+        # vsm.set_display("head_color", False)  # or True if you want
+
+
         greet_guests = robot.say("Hello, museum enthusiasts!")
         walk = robot.go_to_relative(Coordinates(x=2.0, y=0.0, theta=0.0))
         await walk.completed()
@@ -97,11 +103,10 @@ async def main():
         checkpoint1 = robot.say("Napoleon Bonaparte was a French military leader who rose to prominence during the French Revolution and crowned himself Emperor of the French in 1804.")
         await asyncio.sleep(7)
         print("finished first talk")
-        
-        # VideoAPI
-        await stream_head_color(robot_ip)
-
-        # only once stream_head_color() returns do we print "done"
+        try:
+            await stream_head_color(robot_ip)
+        except Exception as e:
+            print(f"[ERROR] Stream failed: {e}")
         print("got first frame")
         
         cont2 = robot.say("Now, let's move to the next exhibit to see the Mona Lisa.")
@@ -111,8 +116,10 @@ async def main():
         checkpoint2 = robot.say("The Mona Lisa, painted by Leonardo da Vinci, is one of the most famous works of art in the world, known for its enigmatic smile.")
         await asyncio.sleep(3)
         print("finished second talk")
-        
-        await stream_head_color(robot_ip)
+        try:
+            await stream_head_color(robot_ip)
+        except Exception as e:
+            print(f"[ERROR] Stream failed: {e}")
         print("got second frame")
         
         cont3 = robot.say("Next, we will visit the ancient Egyptian artifacts.")
@@ -122,7 +129,10 @@ async def main():
         checkpoint3 = robot.say("The Rosetta Stone is a granodiorite stele inscribed with a decree issued in Memphis, Egypt in 196 BC.")
         await asyncio.sleep(3)
         print("finished third talk")
-        await stream_head_color(robot_ip)
+        try:
+            await stream_head_color(robot_ip)
+        except Exception as e:
+            print(f"[ERROR] Stream failed: {e}")
         print("got third frame")
         
         cont4 = robot.say("Now let's head to the dinosaur exhibit.")
@@ -132,7 +142,10 @@ async def main():
         checkpoint4 = robot.say("The T-Rex, or Tyrannosaurus rex, was one of the largest land carnivores of all time, living during the late Cretaceous period.")
         await asyncio.sleep(3)
         print("finished fourth talk")
-        await stream_head_color(robot_ip)
+        try:
+            await stream_head_color(robot_ip)
+        except Exception as e:
+            print(f"[ERROR] Stream failed: {e}")
         print("got fourth frame")
         
         cont5 = robot.say("Thank you for visiting the museum! I hope you enjoyed the tour. Let's head back to the entrance.")
@@ -142,7 +155,10 @@ async def main():
         checkpoint4 = robot.say("Feel free to reach out to us from Enchanted Tools to book our services for your own events! Have a great day!")
         await asyncio.sleep(3)
         print("finished fifth talk")
-        await stream_head_color(robot_ip)
+        try:
+            await stream_head_color(robot_ip)
+        except Exception as e:
+            print(f"[ERROR] Stream failed: {e}")
         print("got fifth frame")
         print("Program completed successfully!!! :)")
         
