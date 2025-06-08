@@ -137,10 +137,10 @@ async def main():
             await asyncio.sleep(0.3)
             people_in_frame = await asyncio.to_thread(count_people_in_image, model, snapshot_path)
             print("counted people")
-            encounter_intro = robot.say(f"Hello, museum enthusiasts! I can see {people_in_frame} people joined our museum tour for today. It's exciting to see that our autonomous Mirokai tours are getting more popular.")
+            # encounter_intro = robot.say(f"Hello, museum enthusiasts! I can see {people_in_frame} people joined our museum tour for today. It's exciting to see that our autonomous Mirokai tours are getting more popular.")
             print(f"I can see {people_in_frame} people. I saved the people detection analysis with bounding boxes inside the frames folder for you.")
             # encounter_intro = robot.say(f"I can see {people_in_frame} people. I saved the people detection analysis with bounding boxes inside the frames folder for you.")
-            await asyncio.sleep(3)
+            # await asyncio.sleep(3)
         except Exception as e:
             print(f"[ERROR]: {e}")
             people_in_frame = -1
@@ -148,7 +148,10 @@ async def main():
         print("analysis done")
 
         for i in range(len(intro_speeches)):
-            await go_to_museum_checkpoint(robot, video_api, full_url, use_absolute_coords=True, coords=coords_list[i], intro_speech=intro_speeches[i], speech_content=speech_contents[i], pause=pauses[i], checkpoint_name=checkpoint_names[i])
+            try:
+                await go_to_museum_checkpoint(robot, video_api, full_url, use_absolute_coords=True, coords=coords_list[i], intro_speech=intro_speeches[i], speech_content=speech_contents[i], pause=pauses[i], checkpoint_name=checkpoint_names[i])
+            except Exception as e:
+                print(f"it failed because of {e}")
         outro = robot.say("If you want your photos from today's exhibit, simply send send me an email and I'll send the photos back to you.")
         print("SUCCESS!!!")
         
