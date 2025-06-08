@@ -123,7 +123,8 @@ async def go_to_museum_checkpoint(
     print(f"[{name}] walk done")
 
     # speak
-    await robot.say(intro)
+    # await robot.say(intro)
+    greet_guests = robot.say("Hello, museum enthusiasts!")
     await asyncio.sleep(pause)
     print(f"[{name}] talk done")
 
@@ -165,7 +166,7 @@ async def main():
         )
 
         # second stop
-        await robot.say("Now, let's move to the next exhibit to see the Mona Lisa.")
+        greet_guests = robot.say("Now, let's move to the next exhibit to see the Mona Lisa.")
         await go_to_museum_checkpoint(
             robot, video_api, full_url,
             coords=Coordinates(x=2.0, y=0.0, theta=0.0),
@@ -176,7 +177,30 @@ async def main():
             pause=4,
             name="second"
         )
+
+        greet_guests = robot.say("Now third")
+        await go_to_museum_checkpoint(
+            robot, video_api, full_url,
+            coords=Coordinates(x=2.0, y=0.0, theta=0.0),
+            intro=(
+                "The Rosetta Stone is a granodiorite stele inscribed with a decree issued in Memphis, Egypt in 196 BC."
+            ),
+            pause=4,
+            name="third"
+        )
+
+        greet_guests = robot.say("Now fourht")
+        await go_to_museum_checkpoint(
+            robot, video_api, full_url,
+            coords=Coordinates(x=2.0, y=0.0, theta=0.0),
+            intro=(
+                "The Rosetta Stone is a granodiorite stele inscribed with a decree issued in Memphis, Egypt in 196 BC."
+            ),
+            pause=4,
+            name="fourth"
+        )
         
+        print("SUCCESS!!!")
         
         # walk = robot.go_to_relative(Coordinates(x=2.0, y=0.0, theta=0.0))
         # await walk.completed()
@@ -190,14 +214,14 @@ async def main():
         #     print(f"[ERROR] Stream failed: {e}")
         # print("got first frame")
         
-        greet_guests = robot.say("Now, let's move to the next exhibit to see the Mona Lisa.")
-        await go_to_museum_checkpoint(robot, robot_ip, use_absolute_coords=False, coords=Coordinates(x=2.0, y=0.0, theta=0.0),
-            speech_content=(
-                "The Mona Lisa, painted by Leonardo da Vinci, is one of the most famous works of art in the world, known for its enigmatic smile."
-            ),
-            speech_timer=4,
-            checkpoint_name="second"
-        )
+        # greet_guests = robot.say("Now, let's move to the next exhibit to see the Mona Lisa.")
+        # await go_to_museum_checkpoint(robot, robot_ip, use_absolute_coords=False, coords=Coordinates(x=2.0, y=0.0, theta=0.0),
+        #     speech_content=(
+        #         "The Mona Lisa, painted by Leonardo da Vinci, is one of the most famous works of art in the world, known for its enigmatic smile."
+        #     ),
+        #     speech_timer=4,
+        #     checkpoint_name="second"
+        # )
         
         # cont2 = robot.say("Now, let's move to the next exhibit to see the Mona Lisa.")
         # walk2 = robot.go_to_relative(Coordinates(x=2.0, y=0.0, theta=0.0))
@@ -212,14 +236,14 @@ async def main():
         #     print(f"[ERROR] Stream failed: {e}")
         # print("got second frame")
         
-        greet_guests = robot.say("Next, we will visit the ancient Egyptian artifacts.")
-        await go_to_museum_checkpoint(robot, robot_ip, use_absolute_coords=False, coords=Coordinates(x=2.0, y=0.0, theta=0.0),
-            speech_content=(
-                "The Rosetta Stone is a granodiorite stele inscribed with a decree issued in Memphis, Egypt in 196 BC."
-            ),
-            speech_timer=4,
-            checkpoint_name="third"
-        )
+        # greet_guests = robot.say("Next, we will visit the ancient Egyptian artifacts.")
+        # await go_to_museum_checkpoint(robot, robot_ip, use_absolute_coords=False, coords=Coordinates(x=2.0, y=0.0, theta=0.0),
+        #     speech_content=(
+        #         "The Rosetta Stone is a granodiorite stele inscribed with a decree issued in Memphis, Egypt in 196 BC."
+        #     ),
+        #     speech_timer=4,
+        #     checkpoint_name="third"
+        # )
         
         # cont3 = robot.say("Next, we will visit the ancient Egyptian artifacts.")
         # walk3 = robot.go_to_relative(Coordinates(x=2.0, y=0.0, theta=0.0))
@@ -234,14 +258,14 @@ async def main():
         #     print(f"[ERROR] Stream failed: {e}")
         # print("got third frame")
         
-        greet_guests = robot.say("Now let's head to the dinosaur exhibit.")
-        await go_to_museum_checkpoint(robot, robot_ip, use_absolute_coords=False, coords=Coordinates(x=2.0, y=0.0, theta=0.0),
-            speech_content=(
-                "The T-Rex, or Tyrannosaurus rex, was one of the largest land carnivores of all time, living during the late Cretaceous period."
-            ),
-            speech_timer=5,
-            checkpoint_name="fourth"
-        )
+        # greet_guests = robot.say("Now let's head to the dinosaur exhibit.")
+        # await go_to_museum_checkpoint(robot, robot_ip, use_absolute_coords=False, coords=Coordinates(x=2.0, y=0.0, theta=0.0),
+        #     speech_content=(
+        #         "The T-Rex, or Tyrannosaurus rex, was one of the largest land carnivores of all time, living during the late Cretaceous period."
+        #     ),
+        #     speech_timer=5,
+        #     checkpoint_name="fourth"
+        # )
         
         # cont4 = robot.say("Now let's head to the dinosaur exhibit.")
         # walk4 = robot.go_to_relative(Coordinates(x=2.0, y=0.0, theta=0.0))
@@ -256,14 +280,14 @@ async def main():
         #     print(f"[ERROR] Stream failed: {e}")
         # print("got fourth frame")
         
-        greet_guests = robot.say("Thank you for visiting the museum! I hope you enjoyed the tour. Let's head back to the entrance.")
-        await go_to_museum_checkpoint(robot, robot_ip, use_absolute_coords=False, coords=Coordinates(x=2.0, y=0.0, theta=0.0),
-            speech_content=(
-                "Feel free to reach out to us from Enchanted Tools to book our services for your own events! Have a great day!"
-            ),
-            speech_timer=5,
-            checkpoint_name="fifth"
-        )
+        # greet_guests = robot.say("Thank you for visiting the museum! I hope you enjoyed the tour. Let's head back to the entrance.")
+        # await go_to_museum_checkpoint(robot, robot_ip, use_absolute_coords=False, coords=Coordinates(x=2.0, y=0.0, theta=0.0),
+        #     speech_content=(
+        #         "Feel free to reach out to us from Enchanted Tools to book our services for your own events! Have a great day!"
+        #     ),
+        #     speech_timer=5,
+        #     checkpoint_name="fifth"
+        # )
         
         # cont5 = robot.say("Thank you for visiting the museum! I hope you enjoyed the tour. Let's head back to the entrance.")
         # walk5 = robot.go_to_relative(Coordinates(x=-8.0, y=0.0, theta=0.0)) # -8, -8
