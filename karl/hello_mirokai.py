@@ -7,6 +7,10 @@ import time
 import cv2
 import numpy as np
 import random
+from torchvision.models.detection import fasterrcnn_resnet50_fpn
+from torchvision import transforms
+from PIL import Image
+import torch
 
 robot_ip = "10.6.57.247" # "10.6.32.15"
 api_key  = "admin"
@@ -72,6 +76,23 @@ async def go_to_museum_checkpoint(robot, video_api: VideoAPI, full_url: str, *, 
     # analyze aduience and say something
     # TODO
 
+def count_people_in_image(model, path: str) -> int:
+    """Run person detection on a saved image and return the number of people detected."""
+    frame = cv2.imread(path)
+    if frame is None:
+        raise FileNotFoundError(f"Could not load image from {path}")
+    
+    img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+    tensor = transforms.ToTensor()(img).unsqueeze(0)
+    with torch.no_grad():
+        outputs = model(tensor)[0]
+
+    people = [
+        score.item() for label, score in zip(outputs['labels'], outputs['scores'])
+        if label.item() == 1 and score.item() > 0.5
+    ]
+    return len(people)
+
 async def main():
     intro_speeches = [
         "Hello, museum enthusiasts!",
@@ -102,12 +123,26 @@ async def main():
     # coords_list = [Coordinates(x=1.0, y=0.0, theta=0.0)] * len(intro_speeches)
     coords_list = [Coordinates(x=1.0, y=0.0, theta=0.0), Coordinates(x=1.0, y=1.0, theta=0.0), Coordinates(x=2.0, y=2.0, theta=0.0), Coordinates(x=3.0, y=2.0, theta=0.0), Coordinates(x=4.0, y=4.0, theta=0.0)]
     
+    model = fasterrcnn_resnet50_fpn(pretrained=True)
+    model.eval()
+
     full_url = f"rtsp://{robot_ip}:8554/head_color"
     video_api = VideoAPI(display=False, timeout=5000)
     video_api.start(full_url)
     await asyncio.sleep(2)  # let buffer fill
     
     async with connect(api_key, robot_ip) as robot:
+        try:
+            snapshot_path = await asyncio.to_thread(take_snapshot, video_api, full_url)
+            people_in_frame = await asyncio.to_thread(count_people_in_image, snapshot_path)
+            print(f"I can see {people_in_frame} people. I saved the people detection analysis with bounding boxes inside the frames folder for you.")
+            # encounter_intro = robot.say(f"I can see {people_in_frame} people. I saved the people detection analysis with bounding boxes inside the frames folder for you.")
+        except Exception as e:
+            print(f"[ERROR]: {e}")
+            people_in_frame = -1
+
+        print("analysis done")
+
         for i in range(len(intro_speeches)):
             await go_to_museum_checkpoint(robot, video_api, full_url, use_absolute_coords=True, coords=coords_list[i], intro_speech=intro_speeches[i], speech_content=speech_contents[i], pause=pauses[i], checkpoint_name=checkpoint_names[i])
         outro = robot.say("If you want your photos from today's exhibit, simply send send me an email and I'll send the photos back to you.")

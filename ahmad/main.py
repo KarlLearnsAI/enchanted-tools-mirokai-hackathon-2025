@@ -40,7 +40,6 @@ COORDS_LIST = [
     Coordinates(x=4.0, y=4.0, theta=0.0)
 ]
 
-
 def take_snapshot(video_api: VideoAPI, full_url: str, snapshot_dir: str = "frames", max_attempts: int = 30, retry_delay: float = 0.1,) -> str:
     """
     Try up to `max_attempts` to read one frame from `video_api`.
