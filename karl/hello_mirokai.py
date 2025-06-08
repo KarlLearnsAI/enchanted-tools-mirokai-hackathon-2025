@@ -93,7 +93,8 @@ async def go_to_museum_checkpoint(robot, video_api: VideoAPI, full_url: str, *, 
 
     # start yapping about museum checkpoint
     speech = robot.say(speech_content)
-    rotate = robot.go_to_absolute(Coordinates(x=coords[0]*i, y=coords[1]*i, theta=coords[3]*0))
+    rotate = robot.go_to_absolute(Coordinates(x=i, y=0.0, theta=0.0))
+    print(f"fixing location for speech -> going back to x={i}, y={0.0}, theta={0.0}")
     await asyncio.sleep(pause)
     print(f"{checkpoint_name} talk done")
 
