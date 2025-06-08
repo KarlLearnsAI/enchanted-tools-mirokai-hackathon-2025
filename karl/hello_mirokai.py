@@ -44,6 +44,41 @@ api_key  = "admin"
 #         video_api.close()
 #         cv2.destroyAllWindows()
 
+
+async def stream_head_color(robot_ip: str):
+    # 1) make VideoAPI, start capture thread
+    video_api = VideoAPI(display=False, timeout=5000)
+    full_url = f"rtsp://{robot_ip}:8554/head_color"
+    video_api.start(full_url)
+
+    # 2) give it a couple of seconds to fill the buffer
+    await asyncio.sleep(2)
+
+    # random snapshot filename
+    num = np.random.randint(1000, 9999)
+
+    def _capture_loop():
+        frame = None
+        try:
+            while frame is None:
+                frame = video_api.get_current_frame()
+                if frame is not None:
+                    cv2.imshow("head_color", frame)
+                    cv2.imwrite(f"frames/head_color_snapshot_{num}.png", frame)
+                    print(f"Saved frames/head_color_snapshot_{num}.png")
+                # break on 'q'
+                if cv2.waitKey(1) & 0xFF == ord("q"):
+                    break
+        except Exception as e:
+            print(f"An error occurred in capture loop: {e}")
+        finally:
+            video_api.stop()
+            cv2.destroyAllWindows()
+
+    # 3) run the blocking OpenCV loop off the main event loop
+    await asyncio.to_thread(_capture_loop)
+
+
 async def main():
     async with connect(api_key, robot_ip) as robot:
         
@@ -56,37 +91,120 @@ async def main():
         # await asyncio.Future()
         
         greet_guests = robot.say("Hello, museum enthusiasts!")
-        walk = robot.go_to_relative(Coordinates(x=2.0, y=2.0, theta=0.0))
+        walk = robot.go_to_relative(Coordinates(x=2.0, y=0.0, theta=0.0))
         await walk.completed()
+        print("finished first walk")
         checkpoint1 = robot.say("Napoleon Bonaparte was a French military leader who rose to prominence during the French Revolution and crowned himself Emperor of the French in 1804.")
-        await asyncio.sleep(3)
+        await asyncio.sleep(7)
+        print("finished first talk")
         
         # VideoAPI
+        await stream_head_color(robot_ip)
+
+        # only once stream_head_color() returns do we print "done"
+        print("got first frame")
         
-
-        # 1) make VideoAPI, start capture thread
-        video_api = VideoAPI(display=False, timeout=5000)
-        full_url = f"rtsp://{robot_ip}:8554/head_color"
-        video_api.start(full_url)
-
-        # 2) give it a couple of seconds to fill the buffer
-        time.sleep(2)
+        cont2 = robot.say("Now, let's move to the next exhibit to see the Mona Lisa.")
+        walk2 = robot.go_to_relative(Coordinates(x=2.0, y=0.0, theta=0.0))
+        await walk2.completed()
+        print("finished second walk")
+        checkpoint2 = robot.say("The Mona Lisa, painted by Leonardo da Vinci, is one of the most famous works of art in the world, known for its enigmatic smile.")
+        await asyncio.sleep(3)
+        print("finished second talk")
         
-        num = np.random.randint(1000, 9999)
-        # 3) display frames until you hit 'q'
-        try:
-            while True:
-                frame = video_api.get_current_frame()
-                if frame is not None:
-                    cv2.imshow("head_color", frame)
-                    cv2.imwrite(f"frames/head_color_snapshot_{num}.png", frame)
-                    print(f"save frames/head_color_snapshot_{num}.png")
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    break
-        except Exception as e:
-            print(f"An error occurred: {e}")
+        await stream_head_color(robot_ip)
+        print("got second frame")
+        
+        cont3 = robot.say("Next, we will visit the ancient Egyptian artifacts.")
+        walk3 = robot.go_to_relative(Coordinates(x=2.0, y=0.0, theta=0.0))
+        await walk3.completed()
+        print("finished third walk")
+        checkpoint3 = robot.say("The Rosetta Stone is a granodiorite stele inscribed with a decree issued in Memphis, Egypt in 196 BC.")
+        await asyncio.sleep(3)
+        print("finished third talk")
+        await stream_head_color(robot_ip)
+        print("got third frame")
+        
+        cont4 = robot.say("Now let's head to the dinosaur exhibit.")
+        walk4 = robot.go_to_relative(Coordinates(x=2.0, y=0.0, theta=0.0))
+        await walk4.completed()
+        print("finished fourth walk")
+        checkpoint4 = robot.say("The T-Rex, or Tyrannosaurus rex, was one of the largest land carnivores of all time, living during the late Cretaceous period.")
+        await asyncio.sleep(3)
+        print("finished fourth talk")
+        await stream_head_color(robot_ip)
+        print("got fourth frame")
+        
+        cont5 = robot.say("Thank you for visiting the museum! I hope you enjoyed the tour. Let's head back to the entrance.")
+        walk5 = robot.go_to_relative(Coordinates(x=-8.0, y=0.0, theta=0.0)) # -8, -8
+        await walk5.completed()
+        print("finished fifth walk")
+        checkpoint4 = robot.say("Feel free to reach out to us from Enchanted Tools to book our services for your own events! Have a great day!")
+        await asyncio.sleep(3)
+        print("finished fifth talk")
+        await stream_head_color(robot_ip)
+        print("got fifth frame")
+        print("Program completed successfully!!! :)")
+        
+        
+        ### WORKING
+        # # 1) make VideoAPI, start capture thread
+        # video_api = VideoAPI(display=False, timeout=5000)
+        # full_url = f"rtsp://{robot_ip}:8554/head_color"
+        # video_api.start(full_url)
 
+        # # 2) give it a couple of seconds to fill the buffer
+        # time.sleep(2)
+        
+        # num = np.random.randint(1000, 9999)
+        # # 3) display frames until you hit 'q'
+        # try:
+        #     while True:
+        #         frame = video_api.get_current_frame()
+        #         if frame is not None:
+        #             cv2.imshow("head_color", frame)
+        #             cv2.imwrite(f"frames/head_color_snapshot_{num}.png", frame)
+        #             print(f"save frames/head_color_snapshot_{num}.png")
+        #         if cv2.waitKey(1) & 0xFF == ord("q"):
+        #             break
+        # except Exception as e:
+        #     print(f"An error occurred: {e}")
+        
+        
+        ### END
+        
+        
+        
+        
+        
+        
+        # frame = capture_snapshot(robot_ip="10.6.32.15", stream_name="head_color")
+        
+        
+        
+        # # 1) make VideoAPI, start capture thread
+        # video_api = VideoAPI(display=False, timeout=5000)
+        # full_url = f"rtsp://{robot_ip}:8554/head_color"
+        # video_api.start(full_url)
 
+        # # 2) give it a couple of seconds to fill the buffer
+        # time.sleep(2)
+        
+        # num = np.random.randint(1000, 9999)
+        # # 3) display frames until you hit 'q'
+        # try:
+        #     while frame is None:
+        #         frame = video_api.get_current_frame()
+        #         if frame is not None:
+        #             cv2.imshow("head_color", frame)
+        #             cv2.imwrite(f"frames/head_color_snapshot_{num}.png", frame)
+        #             print(f"save frames/head_color_snapshot_{num}.png")
+        #         if cv2.waitKey(1) & 0xFF == ord("q"):
+        #             break
+        # except Exception as e:
+        #     print(f"An error occurred: {e}")
+
+        # print("done")
 
 
 
@@ -177,57 +295,5 @@ async def main():
         # # …rest of your tour logic…
         # await robot.say("Now, let's move to the next exhibit…").completed()
         
-        
-        ### end
-        
-        
-        cont2 = robot.say("Now, let's move to the next exhibit to see the Mona Lisa.")
-        walk2 = robot.go_to_relative(Coordinates(x=0.0, y=2.0, theta=0.0))
-        await walk2.completed()
-        checkpoint2 = robot.say("The Mona Lisa, painted by Leonardo da Vinci, is one of the most famous works of art in the world, known for its enigmatic smile.")
-        await asyncio.sleep(3)
-        
-        # 1) make VideoAPI, start capture thread
-        video_api = VideoAPI(display=False, timeout=5000)
-        full_url = f"rtsp://{robot_ip}:8554/head_color"
-        video_api.start(full_url)
-
-        # 2) give it a couple of seconds to fill the buffer
-        time.sleep(2)
-        
-        num = np.random.randint(1000, 9999)
-        # 3) display frames until you hit 'q'
-        try:
-            while True:
-                frame = video_api.get_current_frame()
-                if frame is not None:
-                    cv2.imshow("head_color", frame)
-                    cv2.imwrite(f"frames/head_color_snapshot_{num}.png", frame)
-                    print(f"save frames/head_color_snapshot_{num}.png")
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    break
-        except Exception as e:
-            print(f"An error occurred: {e}")
-        
-        # frame = capture_snapshot(robot_ip="10.6.32.15", stream_name="head_color")
-        
-        # cont3 = robot.say("Next, we will visit the ancient Egyptian artifacts.")
-        # walk3 = robot.go_to_relative(Coordinates(x=2.0, y=2.0, theta=0.0))
-        # await walk3.completed()
-        # checkpoint3 = robot.say("The Rosetta Stone is a granodiorite stele inscribed with a decree issued in Memphis, Egypt in 196 BC.")
-        # await asyncio.sleep(3)
-        
-        # # cont4 = robot.say("Now let's head to the dinosaur exhibit.")
-        # # walk4 = robot.go_to_relative(Coordinates(x=4.0, y=2.0, theta=0.0))
-        # # await walk4.completed()
-        # # checkpoint4 = robot.say("The T-Rex, or Tyrannosaurus rex, was one of the largest land carnivores of all time, living during the late Cretaceous period.")
-        # # await asyncio.sleep(3)
-        
-        # cont5 = robot.say("Thank you for visiting the museum! I hope you enjoyed the tour. Let's head back to the entrance.")
-        # walk5 = robot.go_to_relative(Coordinates(x=-4.0, y=-6.0, theta=0.0)) # -8, -8
-        # await walk5.completed()
-        # checkpoint4 = robot.say("Feel free to reach out to us from Enchanted Tools to book our services for your own events! Have a great day!")
-        # await asyncio.sleep(3)
-
 if __name__ == "__main__":
     asyncio.run(main())
