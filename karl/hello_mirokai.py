@@ -14,6 +14,43 @@ api_key  = "admin"
 def take_snapshot(video_api: VideoAPI, full_url: str, snapshot_dir: str = "frames", max_attempts: int = 30, retry_delay: float = 0.1,) -> str:
     """
     Try up to `max_attempts` to read one frame from `video_api`.
+    On *any* exception or a None frame, restart the stream once and retry.
+    Returns the filepath of the saved snapshot.
+    """
+    def try_get_frame():
+        try:
+            return video_api.get_current_frame()
+        except Exception as e:
+            print(f"[WARN] video_api error: {e!r}")
+            return None
+
+    # first sweep: keep trying for a bit
+    for attempt in range(1, max_attempts + 1):
+        frame = try_get_frame()
+        if frame is not None:
+            break
+        time.sleep(retry_delay)
+    else:
+        # completely failed to get a frame: restart the stream
+        print("[INFO] no frame after max_attempts, restarting stream")
+        video_api.stop()
+        video_api.start(full_url)
+        time.sleep(2) # allow buffer to refill
+        frame = try_get_frame()
+        if frame is None:
+            raise RuntimeError("Stream dead even after restart")
+
+    # save & show
+    num   = np.random.randint(1000, 9999)
+    fname = f"{snapshot_dir}/exhibit_{num}.png"
+    cv2.imwrite(fname, frame)
+    cv2.waitKey(1)
+    print(f"Saved {fname}")
+    return fname
+
+def take_snapshot(video_api: VideoAPI, full_url: str, snapshot_dir: str = "frames", max_attempts: int = 30, retry_delay: float = 0.1,) -> str:
+    """
+    Try up to `max_attempts` to read one frame from `video_api`.
     If no frame appears, restart the stream and try once more.
     Returns the filepath of the saved snapshot.
     """
@@ -40,7 +77,7 @@ def take_snapshot(video_api: VideoAPI, full_url: str, snapshot_dir: str = "frame
     print(f"Saved {fname}")
     return fname
 
-async def go_to_museum_checkpoint(robot, video_api: VideoAPI, full_url: str, *, use_absolute_coords: bool = False, coords: Coordinates, intro_speech: str, speech_content: str, pause: float, checkpoint_name: str):
+async def go_to_museum_checkpoint(robot, video_api: VideoAPI, full_url: str, *, use_absolute_coords: bool = False, coords: Coordinates, intro_speech: str, speech_content: str, pause: float, checkpoint_name: str, i: int = 1):
     # intro to next checkpoint
     introduction = robot.say(intro_speech)
     
@@ -56,6 +93,7 @@ async def go_to_museum_checkpoint(robot, video_api: VideoAPI, full_url: str, *, 
 
     # start yapping about museum checkpoint
     speech = robot.say(speech_content)
+    rotate = robot.go_to_absolute(Coordinates(x=coords[0]*i, y=coords[1]*i, theta=random.uniform(0, 0)))
     await asyncio.sleep(pause)
     print(f"{checkpoint_name} talk done")
 
@@ -104,7 +142,7 @@ async def main():
     
     async with connect(api_key, robot_ip) as robot:
         for i in range(len(intro_speeches)):
-            await go_to_museum_checkpoint(robot, video_api, full_url, coords=coords_list[i], intro_speech=intro_speeches[i], speech_content=speech_contents[i], pause=pauses[i], checkpoint_name=checkpoint_names[i])
+            await go_to_museum_checkpoint(robot, video_api, full_url, coords=coords_list[i], intro_speech=intro_speeches[i], speech_content=speech_contents[i], pause=pauses[i], checkpoint_name=checkpoint_names[i], i=i+1)
         outro = robot.say("If you want your photos from today's exhibit, simply send send me an email and I'll send the photos back to you.")
         print("SUCCESS!!!")
         
