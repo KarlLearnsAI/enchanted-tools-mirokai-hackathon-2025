@@ -11,40 +11,6 @@ import random
 robot_ip = "10.6.57.247" # "10.6.32.15"
 api_key  = "admin"
 
-# def capture_snapshot(robot_ip: str,
-#                      stream_name: str = "head_color",
-#                      timeout_ms: int = 5000,
-#                      poll_interval: float = 0.1) -> "np.ndarray":
-#     """
-#     Connects to the RTSP stream, waits for the first valid frame,
-#     saves it to disk, and returns it.
-#     """
-#     # 1) start the video thread
-#     full_url = f"rtsp://{robot_ip}:8554/{stream_name}"
-#     video_api = VideoAPI(display=False, timeout=timeout_ms)
-#     video_api.start(full_url)
-
-#     try:
-#         # 2) wait until we have a frame
-#         frame = None
-#         while frame is None:
-#             frame = video_api.get_current_frame()
-#             time.sleep(poll_interval)
-
-#         # 3) save exactly once
-#         suffix = random.randint(1000, 9999)
-#         filename = f"{stream_name}_snapshot_{suffix}.png"
-#         cv2.imwrite(filename, frame)
-#         print(f"Saved {filename}")
-
-#         return frame
-
-#     finally:
-#         # 4) clean up
-#         video_api.close()
-#         cv2.destroyAllWindows()
-
-
 async def stream_head_color(robot_ip: str):
     # 1) make VideoAPI, start capture thread
     video_api = VideoAPI(display=False, timeout=5000)
@@ -78,89 +44,146 @@ async def stream_head_color(robot_ip: str):
     # 3) run the blocking OpenCV loop off the main event loop
     await asyncio.to_thread(_capture_loop)
 
+async def go_to_museum_checkpoint(robot, robot_ip: str, *, use_absolute_coords: bool = False, coords: Coordinates, speech_content: str, speech_timer: float, checkpoint_name: str):
+    # move to museum checkpoint
+    if use_absolute_coords:
+        print(f"going to absolute coords {coords} for {checkpoint_name} checkpoint")
+        walk = robot.go_to_absolute(coords)
+    else:
+        print(f"going to relative coords {coords} for {checkpoint_name} checkpoint")
+        walk = robot.go_to_relative(coords)
+    await walk.completed()
+    print(f"finished {checkpoint_name} walk")
+
+    # start yapping about museum checkpoint
+    checkpoint1 = robot.say(speech_content)
+    # await robot.say(speech_content)
+    await asyncio.sleep(speech_timer) # wait for speech to finish
+    print(f"finished {checkpoint_name} talk")
+
+    # take frame of audience
+    try:
+        await stream_head_color(robot_ip)
+    except Exception as e:
+        print(f"[ERROR] Stream failed at {checkpoint_name}: {e}")
+    
+    # analyze aduience and say something
+    # TODO
 
 async def main():
     async with connect(api_key, robot_ip) as robot:
-        
-        # WORKING STREAMER
-        # vsm = robot.video_stream_manager
-        # vsm.stream_base_url = "rtsp://10.6.32.15:8554"
-        # vsm.add_stream("head_color", "head_color")
-        # vsm.set_display("head_color", True)
-        # # hang indefinitely (or until the user presses “q” in the window)
-        # await asyncio.Future()
-        
-        # vsm = robot.video_stream_manager
-        # vsm.stream_base_url = f"rtsp://{robot_ip}:8554"
-        # vsm.add_stream("head_color", "head_color")
-        # vsm.set_display("head_color", False)  # or True if you want
-
-
+        # greeting + first checkpoint
+        # await robot.say("Hello, museum enthusiasts!")
         greet_guests = robot.say("Hello, museum enthusiasts!")
-        walk = robot.go_to_relative(Coordinates(x=2.0, y=0.0, theta=0.0))
-        await walk.completed()
-        print("finished first walk")
-        checkpoint1 = robot.say("Napoleon Bonaparte was a French military leader who rose to prominence during the French Revolution and crowned himself Emperor of the French in 1804.")
-        await asyncio.sleep(7)
-        print("finished first talk")
-        try:
-            await stream_head_color(robot_ip)
-        except Exception as e:
-            print(f"[ERROR] Stream failed: {e}")
-        print("got first frame")
+        await go_to_museum_checkpoint(robot, robot_ip, use_absolute_coords=False, coords=Coordinates(x=2.0, y=0.0, theta=0.0),
+            speech_content=(
+                "Napoleon Bonaparte was a French military leader who rose to prominence "
+                "during the French Revolution and crowned himself Emperor of the French in 1804."
+            ),
+            speech_timer=7,
+            checkpoint_name="first"
+        )       
         
-        cont2 = robot.say("Now, let's move to the next exhibit to see the Mona Lisa.")
-        walk2 = robot.go_to_relative(Coordinates(x=2.0, y=0.0, theta=0.0))
-        await walk2.completed()
-        print("finished second walk")
-        checkpoint2 = robot.say("The Mona Lisa, painted by Leonardo da Vinci, is one of the most famous works of art in the world, known for its enigmatic smile.")
-        await asyncio.sleep(3)
-        print("finished second talk")
-        try:
-            await stream_head_color(robot_ip)
-        except Exception as e:
-            print(f"[ERROR] Stream failed: {e}")
-        print("got second frame")
+        # walk = robot.go_to_relative(Coordinates(x=2.0, y=0.0, theta=0.0))
+        # await walk.completed()
+        # print("finished first walk")
+        # # checkpoint1 = robot.say("Napoleon Bonaparte was a French military leader who rose to prominence during the French Revolution and crowned himself Emperor of the French in 1804.")
+        # await asyncio.sleep(7)
+        # print("finished first talk")
+        # try:
+        #     await stream_head_color(robot_ip)
+        # except Exception as e:
+        #     print(f"[ERROR] Stream failed: {e}")
+        # print("got first frame")
         
-        cont3 = robot.say("Next, we will visit the ancient Egyptian artifacts.")
-        walk3 = robot.go_to_relative(Coordinates(x=2.0, y=0.0, theta=0.0))
-        await walk3.completed()
-        print("finished third walk")
-        checkpoint3 = robot.say("The Rosetta Stone is a granodiorite stele inscribed with a decree issued in Memphis, Egypt in 196 BC.")
-        await asyncio.sleep(3)
-        print("finished third talk")
-        try:
-            await stream_head_color(robot_ip)
-        except Exception as e:
-            print(f"[ERROR] Stream failed: {e}")
-        print("got third frame")
+        greet_guests = robot.say("Now, let's move to the next exhibit to see the Mona Lisa.")
+        await go_to_museum_checkpoint(robot, robot_ip, use_absolute_coords=False, coords=Coordinates(x=2.0, y=0.0, theta=0.0),
+            speech_content=(
+                "The Mona Lisa, painted by Leonardo da Vinci, is one of the most famous works of art in the world, known for its enigmatic smile."
+            ),
+            speech_timer=4,
+            checkpoint_name="second"
+        )
         
-        cont4 = robot.say("Now let's head to the dinosaur exhibit.")
-        walk4 = robot.go_to_relative(Coordinates(x=2.0, y=0.0, theta=0.0))
-        await walk4.completed()
-        print("finished fourth walk")
-        checkpoint4 = robot.say("The T-Rex, or Tyrannosaurus rex, was one of the largest land carnivores of all time, living during the late Cretaceous period.")
-        await asyncio.sleep(3)
-        print("finished fourth talk")
-        try:
-            await stream_head_color(robot_ip)
-        except Exception as e:
-            print(f"[ERROR] Stream failed: {e}")
-        print("got fourth frame")
+        # cont2 = robot.say("Now, let's move to the next exhibit to see the Mona Lisa.")
+        # walk2 = robot.go_to_relative(Coordinates(x=2.0, y=0.0, theta=0.0))
+        # await walk2.completed()
+        # print("finished second walk")
+        # checkpoint2 = robot.say("The Mona Lisa, painted by Leonardo da Vinci, is one of the most famous works of art in the world, known for its enigmatic smile.")
+        # await asyncio.sleep(3)
+        # print("finished second talk")
+        # try:
+        #     await stream_head_color(robot_ip)
+        # except Exception as e:
+        #     print(f"[ERROR] Stream failed: {e}")
+        # print("got second frame")
         
-        cont5 = robot.say("Thank you for visiting the museum! I hope you enjoyed the tour. Let's head back to the entrance.")
-        walk5 = robot.go_to_relative(Coordinates(x=-8.0, y=0.0, theta=0.0)) # -8, -8
-        await walk5.completed()
-        print("finished fifth walk")
-        checkpoint4 = robot.say("Feel free to reach out to us from Enchanted Tools to book our services for your own events! Have a great day!")
-        await asyncio.sleep(3)
-        print("finished fifth talk")
-        try:
-            await stream_head_color(robot_ip)
-        except Exception as e:
-            print(f"[ERROR] Stream failed: {e}")
-        print("got fifth frame")
-        print("Program completed successfully!!! :)")
+        greet_guests = robot.say("Next, we will visit the ancient Egyptian artifacts.")
+        await go_to_museum_checkpoint(robot, robot_ip, use_absolute_coords=False, coords=Coordinates(x=2.0, y=0.0, theta=0.0),
+            speech_content=(
+                "The Rosetta Stone is a granodiorite stele inscribed with a decree issued in Memphis, Egypt in 196 BC."
+            ),
+            speech_timer=4,
+            checkpoint_name="third"
+        )
+        
+        # cont3 = robot.say("Next, we will visit the ancient Egyptian artifacts.")
+        # walk3 = robot.go_to_relative(Coordinates(x=2.0, y=0.0, theta=0.0))
+        # await walk3.completed()
+        # print("finished third walk")
+        # checkpoint3 = robot.say("The Rosetta Stone is a granodiorite stele inscribed with a decree issued in Memphis, Egypt in 196 BC.")
+        # await asyncio.sleep(3)
+        # print("finished third talk")
+        # try:
+        #     await stream_head_color(robot_ip)
+        # except Exception as e:
+        #     print(f"[ERROR] Stream failed: {e}")
+        # print("got third frame")
+        
+        greet_guests = robot.say("Now let's head to the dinosaur exhibit.")
+        await go_to_museum_checkpoint(robot, robot_ip, use_absolute_coords=False, coords=Coordinates(x=2.0, y=0.0, theta=0.0),
+            speech_content=(
+                "The T-Rex, or Tyrannosaurus rex, was one of the largest land carnivores of all time, living during the late Cretaceous period."
+            ),
+            speech_timer=5,
+            checkpoint_name="fourth"
+        )
+        
+        # cont4 = robot.say("Now let's head to the dinosaur exhibit.")
+        # walk4 = robot.go_to_relative(Coordinates(x=2.0, y=0.0, theta=0.0))
+        # await walk4.completed()
+        # print("finished fourth walk")
+        # checkpoint4 = robot.say("The T-Rex, or Tyrannosaurus rex, was one of the largest land carnivores of all time, living during the late Cretaceous period.")
+        # await asyncio.sleep(3)
+        # print("finished fourth talk")
+        # try:
+        #     await stream_head_color(robot_ip)
+        # except Exception as e:
+        #     print(f"[ERROR] Stream failed: {e}")
+        # print("got fourth frame")
+        
+        greet_guests = robot.say("Thank you for visiting the museum! I hope you enjoyed the tour. Let's head back to the entrance.")
+        await go_to_museum_checkpoint(robot, robot_ip, use_absolute_coords=False, coords=Coordinates(x=2.0, y=0.0, theta=0.0),
+            speech_content=(
+                "Feel free to reach out to us from Enchanted Tools to book our services for your own events! Have a great day!"
+            ),
+            speech_timer=5,
+            checkpoint_name="fifth"
+        )
+        
+        # cont5 = robot.say("Thank you for visiting the museum! I hope you enjoyed the tour. Let's head back to the entrance.")
+        # walk5 = robot.go_to_relative(Coordinates(x=-8.0, y=0.0, theta=0.0)) # -8, -8
+        # await walk5.completed()
+        # print("finished fifth walk")
+        # checkpoint4 = robot.say("Feel free to reach out to us from Enchanted Tools to book our services for your own events! Have a great day!")
+        # await asyncio.sleep(3)
+        # print("finished fifth talk")
+        # try:
+        #     await stream_head_color(robot_ip)
+        # except Exception as e:
+        #     print(f"[ERROR] Stream failed: {e}")
+        # print("got fifth frame")
+        # print("Program completed successfully!!! :)")
         
         
         ### WORKING
@@ -187,129 +210,21 @@ async def main():
         #     print(f"An error occurred: {e}")
         
         
+        # WORKING STREAMER
+        # vsm = robot.video_stream_manager
+        # vsm.stream_base_url = "rtsp://10.6.32.15:8554"
+        # vsm.add_stream("head_color", "head_color")
+        # vsm.set_display("head_color", True)
+        # # hang indefinitely (or until the user presses “q” in the window)
+        # await asyncio.Future()
+        
+        # vsm = robot.video_stream_manager
+        # vsm.stream_base_url = f"rtsp://{robot_ip}:8554"
+        # vsm.add_stream("head_color", "head_color")
+        # vsm.set_display("head_color", False)  # or True if you want
+        
         ### END
         
-        
-        
-        
-        
-        
-        # frame = capture_snapshot(robot_ip="10.6.32.15", stream_name="head_color")
-        
-        
-        
-        # # 1) make VideoAPI, start capture thread
-        # video_api = VideoAPI(display=False, timeout=5000)
-        # full_url = f"rtsp://{robot_ip}:8554/head_color"
-        # video_api.start(full_url)
-
-        # # 2) give it a couple of seconds to fill the buffer
-        # time.sleep(2)
-        
-        # num = np.random.randint(1000, 9999)
-        # # 3) display frames until you hit 'q'
-        # try:
-        #     while frame is None:
-        #         frame = video_api.get_current_frame()
-        #         if frame is not None:
-        #             cv2.imshow("head_color", frame)
-        #             cv2.imwrite(f"frames/head_color_snapshot_{num}.png", frame)
-        #             print(f"save frames/head_color_snapshot_{num}.png")
-        #         if cv2.waitKey(1) & 0xFF == ord("q"):
-        #             break
-        # except Exception as e:
-        #     print(f"An error occurred: {e}")
-
-        # print("done")
-
-
-
-
-
-        # # 4) clean up
-        # video_api.close()
-        # cv2.destroyAllWindows()
-
-        # …then you can continue with your robot.say() calls if needed…
-        
-        
-        
-        
-        
-        # frame = capture_snapshot(robot_ip="10.6.32.15", stream_name="head_color")
-        
-        # robot.video_stream_manager.add_stream(stream_name="head_color", stream_url="head_color")
-        # # get the frame
-        # cur_frame = robot.video_stream_manager.get_frame()
-        # # visualize the frame
-        
-        ### start
-        
-        # Display frames
-        # 1) Point it at your robot’s RTSP endpoint
-        # vsm = VideoStreamManager(stream_base_url="rtsp://10.6.32.15:8554")
-
-        # # 2) Add your camera feed by name
-        # vsm.add_stream(stream_name="head_color", stream_url="head_color")
-
-        # # 3) Turn display ON for that feed
-        # vsm.set_display("head_color", True)
-
-        # # 4) Let it run until you hit Ctrl+C (or window “q”)
-        # try:
-        #     while True:
-        #         time.sleep(1)
-        # except KeyboardInterrupt:
-        #     pass
-        # finally:
-        #     # 5) Clean up all windows and threads
-        #     vsm.close_all_streams()
-        
-        
-        # Save a frame
-        # vsm = robot.video_stream_manager
-        # # 1) MUST set the base URL so VideoStreamManager.add_stream works
-        # vsm.stream_base_url = f"rtsp://{robot_ip}:8554"
-
-        # # 2) actually add the stream
-        # vsm.add_stream("head_color", "head_color")
-
-        # # 3) let it start grabbing
-        # await asyncio.sleep(2)
-
-        # num = np.random.randint(1000, 9999)
-        # # 4) now get and save
-        # frame = vsm.get_frame("head_color")
-        # if frame is None:
-        #     print("No frame available yet!")
-        # else:
-        #     cv2.imwrite(f"head_color_snapshot_{num}.png", frame)
-        #     print("Saved head_color_snapshot_{num}.png")
-        
-        
-        
-        
-        # vsm = robot.video_stream_manager
-        
-        # # Make sure your base URL is set before adding:
-        # # robot.video_stream_manager.stream_base_url = "rtsp://10.6.32.15:8554"
-        
-        # # vsm.add_stream(stream_name="head_color", stream_url="head_color")
-        
-        # # Give the capture thread a little time to start pulling frames
-        # await asyncio.sleep(2)
-        
-        # # Now ask for the latest frame by name
-        # frame = vsm.get_frame("head_color")
-        # if frame is None:
-        #     print("No frame available yet!")
-        # else:
-        #     # Save to disk (it's just a numpy array)
-        #     cv2.imwrite("head_color_snapshot.png", frame)
-        #     print("Saved head_color_snapshot.png")
-        
-        # # …rest of your tour logic…
-        # await robot.say("Now, let's move to the next exhibit…").completed()
         
 if __name__ == "__main__":
     asyncio.run(main())
