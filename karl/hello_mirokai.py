@@ -77,7 +77,6 @@ async def go_to_museum_checkpoint(robot, video_api: VideoAPI, full_url: str, *, 
     # TODO
 
 def count_people_in_image(model, path: str) -> int:
-    """Run person detection on a saved image and return the number of people detected."""
     frame = cv2.imread(path)
     if frame is None:
         raise FileNotFoundError(f"Could not load image from {path}")
@@ -95,7 +94,7 @@ def count_people_in_image(model, path: str) -> int:
 
 async def main():
     intro_speeches = [
-        "Hello, museum enthusiasts!",
+        "We will first take a look at one of the most adventurous people that ever existed. Napolean Bonaparte.",
         "Now, let's move to the next exhibit to see the Mona Lisa.",
         "Now, let's move to the next exhibit to see the Rosetta Stone.",
         "Now let's head to the dinosaur exhibit.",
@@ -107,7 +106,7 @@ async def main():
         "The Mona Lisa, painted by Leonardo da Vinci, is one of the most famous works of art in the world, known for its enigmatic smile.",
         "The Rosetta Stone is a granodiorite stele inscribed with a decree issued in Memphis, Egypt in 196 BC.",
         "The T-Rex, or Tyrannosaurus rex, was one of the largest land carnivores of all time, living during the late Cretaceous period.",
-        "Feel free to reach out to us from Enchanted Tools to book our services for your own events! Have a great day!"
+        "Feel free to reach out to us from Enchanted Tools to book our autonomous robotics services for your own events! Bon journee!"
     ]
 
     pauses = [7, 4, 4, 4, 4]
@@ -121,7 +120,7 @@ async def main():
     ]
     
     # coords_list = [Coordinates(x=1.0, y=0.0, theta=0.0)] * len(intro_speeches)
-    coords_list = [Coordinates(x=1.0, y=0.0, theta=0.0), Coordinates(x=1.0, y=1.0, theta=0.0), Coordinates(x=2.0, y=2.0, theta=0.0), Coordinates(x=3.0, y=2.0, theta=0.0), Coordinates(x=4.0, y=4.0, theta=0.0)]
+    coords_list = [Coordinates(x=2.05, y=2.73, theta=0.0), Coordinates(x=0.98, y=4.74, theta=0.0), Coordinates(x=3.59, y=4.34, theta=0.0), Coordinates(x=6.53, y=5.67, theta=0.0), Coordinates(x=0.0, y=0.0, theta=0.0)]
     
     model = fasterrcnn_resnet50_fpn(pretrained=True)
     model.eval()
@@ -134,9 +133,14 @@ async def main():
     async with connect(api_key, robot_ip) as robot:
         try:
             snapshot_path = await asyncio.to_thread(take_snapshot, video_api, full_url)
-            people_in_frame = await asyncio.to_thread(count_people_in_image, snapshot_path)
+            print("got img")
+            await asyncio.sleep(0.3)
+            people_in_frame = await asyncio.to_thread(count_people_in_image, model, snapshot_path)
+            print("counted people")
+            encounter_intro = robot.say(f"Hello, museum enthusiasts! I can see {people_in_frame} people joined our museum tour for today. It's exciting to see that our autonomous Mirokai tours are getting more popular.")
             print(f"I can see {people_in_frame} people. I saved the people detection analysis with bounding boxes inside the frames folder for you.")
             # encounter_intro = robot.say(f"I can see {people_in_frame} people. I saved the people detection analysis with bounding boxes inside the frames folder for you.")
+            await asyncio.sleep(3)
         except Exception as e:
             print(f"[ERROR]: {e}")
             people_in_frame = -1
