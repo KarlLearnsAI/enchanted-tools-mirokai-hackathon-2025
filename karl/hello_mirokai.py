@@ -145,7 +145,7 @@ async def main():
     
     async with connect(api_key, robot_ip) as robot:
         for i in range(len(intro_speeches)):
-            await go_to_museum_checkpoint(robot, video_api, full_url, coords=coords_list[i], intro_speech=intro_speeches[i], speech_content=speech_contents[i], pause=pauses[i], checkpoint_name=checkpoint_names[i], i=i+1)
+            await go_to_museum_checkpoint(robot, video_api, full_url, use_absolute_coords=True, coords=coords_list[i], intro_speech=intro_speeches[i], speech_content=speech_contents[i], pause=pauses[i], checkpoint_name=checkpoint_names[i], i=i+1)
         outro = robot.say("If you want your photos from today's exhibit, simply send send me an email and I'll send the photos back to you.")
         print("SUCCESS!!!")
         
