@@ -11,42 +11,6 @@ import random
 robot_ip = "10.6.57.247" # "10.6.32.15"
 api_key  = "admin"
 
-def take_snapshot(video_api: VideoAPI, full_url: str, snapshot_dir: str = "frames", max_attempts: int = 30, retry_delay: float = 0.1,) -> str:
-    """
-    Try up to `max_attempts` to read one frame from `video_api`.
-    On *any* exception or a None frame, restart the stream once and retry.
-    Returns the filepath of the saved snapshot.
-    """
-    def try_get_frame():
-        try:
-            return video_api.get_current_frame()
-        except Exception as e:
-            print(f"[WARN] video_api error: {e!r}")
-            return None
-
-    # first sweep: keep trying for a bit
-    for attempt in range(1, max_attempts + 1):
-        frame = try_get_frame()
-        if frame is not None:
-            break
-        time.sleep(retry_delay)
-    else:
-        # completely failed to get a frame: restart the stream
-        print("[INFO] no frame after max_attempts, restarting stream")
-        video_api.stop()
-        video_api.start(full_url)
-        time.sleep(2) # allow buffer to refill
-        frame = try_get_frame()
-        if frame is None:
-            raise RuntimeError("Stream dead even after restart")
-
-    # save & show
-    num   = np.random.randint(1000, 9999)
-    fname = f"{snapshot_dir}/exhibit_{num}.png"
-    cv2.imwrite(fname, frame)
-    cv2.waitKey(1)
-    print(f"Saved {fname}")
-    return fname
 
 def take_snapshot(video_api: VideoAPI, full_url: str, snapshot_dir: str = "frames", max_attempts: int = 30, retry_delay: float = 0.1,) -> str:
     """
@@ -77,7 +41,7 @@ def take_snapshot(video_api: VideoAPI, full_url: str, snapshot_dir: str = "frame
     print(f"Saved {fname}")
     return fname
 
-async def go_to_museum_checkpoint(robot, video_api: VideoAPI, full_url: str, *, use_absolute_coords: bool = False, coords: Coordinates, intro_speech: str, speech_content: str, pause: float, checkpoint_name: str, i: int = 1):
+async def go_to_museum_checkpoint(robot, video_api: VideoAPI, full_url: str, *, use_absolute_coords: bool = True, coords: Coordinates, intro_speech: str, speech_content: str, pause: float, checkpoint_name: str):
     # intro to next checkpoint
     introduction = robot.say(intro_speech)
     
@@ -89,6 +53,7 @@ async def go_to_museum_checkpoint(robot, video_api: VideoAPI, full_url: str, *, 
         print(f"going to relative coords {coords} for {checkpoint_name} checkpoint")
         walk = robot.go_to_relative(coords)
     await walk.completed()
+    # await asyncio.sleep(3)
     print(f"{checkpoint_name} walk done")
 
     # start yapping about museum checkpoint
@@ -135,8 +100,7 @@ async def main():
     ]
     
     # coords_list = [Coordinates(x=1.0, y=0.0, theta=0.0)] * len(intro_speeches)
-    coords_list = [Coordinates(x=1.0, y=0.0, theta=0.0), Coordinates(x=2.0, y=0.0, theta=0.0), Coordinates(x=3.0, y=0.0, theta=0.0), Coordinates(x=4.0, y=0.0, theta=0.0), Coordinates(x=5.0, y=0.0, theta=0.0)]
-    # TODO: do it once with absolute coords
+    coords_list = [Coordinates(x=1.0, y=0.0, theta=0.0), Coordinates(x=1.0, y=1.0, theta=0.0), Coordinates(x=2.0, y=2.0, theta=0.0), Coordinates(x=3.0, y=2.0, theta=0.0), Coordinates(x=4.0, y=4.0, theta=0.0)]
     
     full_url = f"rtsp://{robot_ip}:8554/head_color"
     video_api = VideoAPI(display=False, timeout=5000)
@@ -145,7 +109,7 @@ async def main():
     
     async with connect(api_key, robot_ip) as robot:
         for i in range(len(intro_speeches)):
-            await go_to_museum_checkpoint(robot, video_api, full_url, use_absolute_coords=True, coords=coords_list[i], intro_speech=intro_speeches[i], speech_content=speech_contents[i], pause=pauses[i], checkpoint_name=checkpoint_names[i], i=i+1)
+            await go_to_museum_checkpoint(robot, video_api, full_url, use_absolute_coords=True, coords=coords_list[i], intro_speech=intro_speeches[i], speech_content=speech_contents[i], pause=pauses[i], checkpoint_name=checkpoint_names[i])
         outro = robot.say("If you want your photos from today's exhibit, simply send send me an email and I'll send the photos back to you.")
         print("SUCCESS!!!")
         
