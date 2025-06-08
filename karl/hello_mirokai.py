@@ -93,8 +93,8 @@ async def go_to_museum_checkpoint(robot, video_api: VideoAPI, full_url: str, *, 
 
     # start yapping about museum checkpoint
     speech = robot.say(speech_content)
-    rotate = robot.go_to_absolute(Coordinates(x=i, y=0.0, theta=0.0))
-    print(f"fixing location for speech -> going back to x={i}, y={0.0}, theta={0.0}")
+    # rotate = robot.go_to_absolute(Coordinates(x=i, y=0.0, theta=0.0))
+    # print(f"fixing location for speech -> going back to x={i}, y={0.0}, theta={0.0}")
     await asyncio.sleep(pause)
     print(f"{checkpoint_name} talk done")
 
@@ -134,7 +134,9 @@ async def main():
         "fifth (FINAL)"
     ]
     
-    coords_list = [Coordinates(x=1.0, y=0.0, theta=0.0)] * len(intro_speeches)
+    # coords_list = [Coordinates(x=1.0, y=0.0, theta=0.0)] * len(intro_speeches)
+    coords_list = [Coordinates(x=1.0, y=0.0, theta=0.0), Coordinates(x=2.0, y=0.0, theta=0.0), Coordinates(x=3.0, y=0.0, theta=0.0), Coordinates(x=4.0, y=0.0, theta=0.0), Coordinates(x=5.0, y=0.0, theta=0.0)]
+    # TODO: do it once with absolute coords
     
     full_url = f"rtsp://{robot_ip}:8554/head_color"
     video_api = VideoAPI(display=False, timeout=5000)
